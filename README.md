@@ -123,6 +123,29 @@ curl -X POST "http://localhost:8000/api/v1/resume/analyze" \
 }
 ```
 
+## PDF 简历上传接口
+
+上传最大 10 MB 的文本型 PDF 简历：
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/resume/upload" \
+  -F "file=@resume.pdf;type=application/pdf"
+```
+
+响应示例：
+
+```json
+{
+  "filename": "resume.pdf",
+  "text": "Python、FastAPI 项目经验……",
+  "pages": 2
+}
+```
+
+如需继续分析，将响应中的 `text` 作为 `resume_text`，与目标岗位
+`job_description` 一起提交到 `/api/v1/resume/analyze`。当前版本提取文本型 PDF；
+扫描件需要后续接入 OCR。
+
 ## Docker 启动
 
 ```bash

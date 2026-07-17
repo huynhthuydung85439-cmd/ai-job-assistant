@@ -31,3 +31,9 @@ class ResumeAnalysisResponse(BaseModel):
         default_factory=list,
         description="Likely interview questions based on the job and identified gaps",
     )
+
+
+class ResumeUploadResponse(BaseModel):
+    filename: str
+    text: str
+    pages: int = Field(gt=0)
