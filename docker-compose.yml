@@ -18,6 +18,17 @@ services:
       DEEPSEEK_MAX_TOKENS: ${DEEPSEEK_MAX_TOKENS:-2048}
       DEEPSEEK_TIMEOUT_SECONDS: ${DEEPSEEK_TIMEOUT_SECONDS:-60}
       DEEPSEEK_MAX_RETRIES: ${DEEPSEEK_MAX_RETRIES:-2}
+      CHROMA_PERSIST_DIRECTORY: /app/data/chroma
+      CHROMA_COLLECTION_NAME: ${CHROMA_COLLECTION_NAME:-job_assistant_knowledge}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cpu}
+      RAG_CHUNK_SIZE: ${RAG_CHUNK_SIZE:-800}
+      RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP:-120}
+      RAG_TOP_K: ${RAG_TOP_K:-4}
+      HF_HOME: /app/.cache/huggingface
+    volumes:
+      - chroma_data:/app/data/chroma
+      - huggingface_cache:/app/.cache/huggingface
     depends_on:
       mysql:
         condition: service_healthy
@@ -65,6 +76,8 @@ services:
 volumes:
   mysql_data:
   redis_data:
+  chroma_data:
+  huggingface_cache:
 
 networks:
   backend:

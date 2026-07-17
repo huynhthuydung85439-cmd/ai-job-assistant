@@ -12,5 +12,5 @@ __pycache__
 .idea
 .vscode
 tests
+data
 README.md
-

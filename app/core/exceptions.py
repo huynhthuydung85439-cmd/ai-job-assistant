@@ -34,3 +34,9 @@ class PDFParsingError(ApplicationError):
     status_code = 422
     error_code = "pdf_parsing_error"
     public_message = "PDF 无法解析或未包含可提取的文本。"
+
+
+class KnowledgeBaseError(ApplicationError):
+    status_code = 503
+    error_code = "knowledge_base_error"
+    public_message = "知识库服务暂时不可用，请稍后重试。"

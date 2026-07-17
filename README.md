@@ -146,6 +146,35 @@ curl -X POST "http://localhost:8000/api/v1/resume/upload" \
 `job_description` 一起提交到 `/api/v1/resume/analyze`。当前版本提取文本型 PDF；
 扫描件需要后续接入 OCR。
 
+## RAG 知识库
+
+上传招聘 JD 或面试资料 PDF：
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/knowledge/upload" \
+  -F "file=@job-description.pdf;type=application/pdf"
+```
+
+上传结果包含文档 ID、文件名、页数和文本分块数。随后可基于已上传资料提问：
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/knowledge/chat" \
+  -H "Content-Type: application/json" \
+  -d '{"question":"这个岗位需要哪些技能？"}'
+```
+
+响应示例：
+
+```json
+{
+  "answer": "该岗位需要 Python、FastAPI 和 MySQL 等技能。",
+  "sources": ["job-description.pdf"]
+}
+```
+
+知识库使用本地多语言 Embedding 模型和 Chroma 持久化，首次使用会自动下载模型。
+默认数据目录为 `data/chroma`，该目录不会提交到 Git。
+
 ## Docker 启动
 
 ```bash
