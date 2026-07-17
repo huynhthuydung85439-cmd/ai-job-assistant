@@ -64,6 +64,12 @@ AI-powered job assistant based on LLM, RAG and Agent technology.
    Copy-Item .env.example .env
    ```
 
+   编辑 `.env`，填写从 DeepSeek 控制台获取的密钥：
+
+   ```dotenv
+   DEEPSEEK_API_KEY=your_deepseek_api_key
+   ```
+
 3. 启动接口（MySQL、Redis 可单独通过 Docker 启动）：
 
    ```bash
@@ -75,6 +81,47 @@ AI-powered job assistant based on LLM, RAG and Agent technology.
 
    - API 文档：<http://localhost:8000/docs>
    - 健康检查：<http://localhost:8000/api/v1/health>
+
+## AI 对话接口
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/chat" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"帮我分析这个岗位"}'
+```
+
+响应示例：
+
+```json
+{
+  "answer": "请提供岗位描述，我会从职责、要求和匹配度进行分析。"
+}
+```
+
+## 简历智能分析接口
+
+提交简历文本和目标岗位 JD：
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/resume/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resume_text": "三年 Python 和 FastAPI 开发经验。",
+    "job_description": "招聘 Python 工程师，要求 FastAPI、MySQL 和 Kubernetes。"
+  }'
+```
+
+响应示例：
+
+```json
+{
+  "score": 85,
+  "matching_skills": ["Python", "FastAPI"],
+  "missing_skills": ["Kubernetes"],
+  "resume_advices": ["补充项目成果和性能指标"],
+  "interview_questions": ["如何设计高可用的 FastAPI 服务？"]
+}
+```
 
 ## Docker 启动
 

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr, computed_field
+from pydantic import Field, SecretStr, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,14 +23,16 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
 
     database_url: str = (
-        "mysql+asyncmy://ai_job_user:change_me@localhost:3306/"
-        "ai_job_assistant?charset=utf8mb4"
+        "mysql+asyncmy://ai_job_user:change_me@localhost:3306/ai_job_assistant?charset=utf8mb4"
     )
     redis_url: str = "redis://localhost:6379/0"
 
-    llm_provider: str = ""
-    llm_model: str = ""
-    llm_api_key: SecretStr = SecretStr("")
+    deepseek_api_key: SecretStr = SecretStr("")
+    deepseek_model: str = "deepseek-v4-flash"
+    deepseek_temperature: float = Field(default=0.2, ge=0, le=2)
+    deepseek_max_tokens: int = Field(default=2048, gt=0)
+    deepseek_timeout_seconds: float = Field(default=60, gt=0)
+    deepseek_max_retries: int = Field(default=2, ge=0, le=10)
 
     @computed_field
     @property
