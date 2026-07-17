@@ -3,6 +3,7 @@ class ApplicationError(Exception):
 
     status_code = 500
     error_code = "application_error"
+    headers: dict[str, str] | None = None
     public_message = "服务暂时不可用，请稍后重试。"
 
 
@@ -40,3 +41,40 @@ class KnowledgeBaseError(ApplicationError):
     status_code = 503
     error_code = "knowledge_base_error"
     public_message = "知识库服务暂时不可用，请稍后重试。"
+
+
+class AuthConfigurationError(ApplicationError):
+    status_code = 503
+    error_code = "auth_not_configured"
+    public_message = "认证服务尚未正确配置。"
+
+
+class AuthenticationError(ApplicationError):
+    status_code = 401
+    error_code = "authentication_failed"
+    public_message = "用户名、密码或访问令牌无效。"
+    headers = {"WWW-Authenticate": "Bearer"}
+
+
+class DuplicateUserError(ApplicationError):
+    status_code = 409
+    error_code = "user_already_exists"
+    public_message = "用户名或邮箱已被注册。"
+
+
+class PasswordPolicyError(ApplicationError):
+    status_code = 422
+    error_code = "invalid_password"
+    public_message = "密码必须为 8 至 72 个字节。"
+
+
+class ResourceNotFoundError(ApplicationError):
+    status_code = 404
+    error_code = "resource_not_found"
+    public_message = "请求的资源不存在。"
+
+
+class ResourceAccessDeniedError(ApplicationError):
+    status_code = 403
+    error_code = "resource_access_denied"
+    public_message = "无权访问该资源。"

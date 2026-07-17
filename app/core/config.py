@@ -27,8 +27,13 @@ class Settings(BaseSettings):
     )
     redis_url: str = "redis://localhost:6379/0"
 
+    jwt_secret_key: SecretStr = SecretStr("")
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = Field(default=1440, gt=0)
+    bcrypt_rounds: int = Field(default=12, ge=4, le=16)
+
     deepseek_api_key: SecretStr = SecretStr("")
-    deepseek_model: str = "deepseek-v4-flash"
+    deepseek_model: str = "deepseek-chat"
     deepseek_temperature: float = Field(default=0.2, ge=0, le=2)
     deepseek_max_tokens: int = Field(default=2048, gt=0)
     deepseek_timeout_seconds: float = Field(default=60, gt=0)

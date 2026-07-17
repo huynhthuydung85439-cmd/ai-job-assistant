@@ -2,8 +2,12 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import PDFTooLargeError, UnsupportedPDFError
+from app.db.session import get_db_session
+from app.dependencies.auth import get_optional_current_user
+from app.models.user import User
 from app.rag.rag_service import RAGService, get_rag_service
 from app.schemas.knowledge import (
     KnowledgeChatRequest,
@@ -11,6 +15,7 @@ from app.schemas.knowledge import (
     KnowledgeUploadResponse,
 )
 from app.services.pdf_parser import MAX_PDF_SIZE_BYTES
+from app.services.records import save_chat_history
 
 router = APIRouter(prefix="/knowledge")
 
@@ -59,6 +64,15 @@ async def upload_knowledge(
 async def chat_with_knowledge(
     payload: KnowledgeChatRequest,
     service: Annotated[RAGService, Depends(get_rag_service)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    current_user: Annotated[User | None, Depends(get_optional_current_user)],
 ) -> KnowledgeChatResponse:
     answer, sources = await service.answer(payload.question)
+    if current_user is not None:
+        await save_chat_history(
+            session=session,
+            user_id=current_user.id,
+            question=payload.question,
+            answer=answer,
+        )
     return KnowledgeChatResponse(answer=answer, sources=sources)

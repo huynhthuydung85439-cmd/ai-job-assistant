@@ -11,6 +11,11 @@ ResumeContent = Annotated[
 class ResumeAnalysisRequest(BaseModel):
     resume_text: ResumeContent = Field(description="The candidate's resume text")
     job_description: ResumeContent = Field(description="The target job description")
+    resume_id: int | None = Field(
+        default=None,
+        gt=0,
+        description="Authenticated upload ID used to persist the analysis",
+    )
 
 
 class ResumeAnalysisResponse(BaseModel):
@@ -37,3 +42,7 @@ class ResumeUploadResponse(BaseModel):
     filename: str
     text: str
     pages: int = Field(gt=0)
+    resume_id: int | None = Field(
+        default=None,
+        description="Database record ID when the request is authenticated",
+    )
