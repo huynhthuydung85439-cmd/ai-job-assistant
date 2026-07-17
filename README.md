@@ -1,5 +1,7 @@
 # AI Job Assistant
 
+AI-powered job assistant based on LLM, RAG and Agent technology.
+
 基于 FastAPI、LangChain 与 LangGraph 的 AI 求职助手后端项目骨架。
 
 ## 规划能力
