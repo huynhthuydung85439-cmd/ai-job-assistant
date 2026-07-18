@@ -6,10 +6,10 @@ asyncio_mode = "auto"
 target-version = "py312"
 line-length = 100
 exclude = ["migrations/versions"]
+extend-exclude = [".venv312"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
 [tool.ruff.format]
 quote-style = "double"
-

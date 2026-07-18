@@ -1,10 +1,11 @@
 # AI Job Assistant
 
-基于 FastAPI、LangChain、DeepSeek 和 Chroma 的 AI 求职助手后端。目前支持 AI 对话、PDF 简历解析、简历与岗位 JD 匹配分析、RAG 知识库，以及 JWT 用户认证与 MySQL 数据持久化。
+基于 React、FastAPI、LangChain、DeepSeek 和 Chroma 的 AI 求职助手。目前支持 AI 对话、PDF 简历解析、简历与岗位 JD 匹配分析、RAG 知识库，以及 JWT 用户认证与 MySQL 数据持久化。
 
 ## 技术栈
 
 - Python 3.12
+- React / TypeScript / Vite
 - FastAPI
 - LangChain / LangGraph / DeepSeek
 - SQLAlchemy 2 / Alembic / MySQL 8.4
@@ -27,6 +28,7 @@ app/
 └── main.py                 # FastAPI 应用入口
 migrations/                 # Alembic 数据库迁移
 tests/                      # pytest 自动化测试
+frontend/                   # React 求职工作台
 ```
 
 ## 配置
@@ -65,6 +67,20 @@ uvicorn app.main:app --reload
 ```
 
 服务默认地址为 <http://localhost:8000>，接口文档为 <http://localhost:8000/docs>。
+
+前端开发模式：
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+前端地址为 <http://localhost:5173>。Vite 会将 `/api` 请求代理到本地 FastAPI 服务。
+
+### UI 设计参考
+
+前端视觉语言参考 Figma Community 的 [AiDEA – Smart SaaS Dashboard UI Kit](https://www.figma.com/community/file/1532723729743223601)（Hamed，CC BY 4.0）。本项目重新实现了适合 AI 求职场景的页面与组件，没有复制该套件的付费素材。
 
 ## 用户注册与登录
 
@@ -207,7 +223,7 @@ alembic revision --autogenerate -m "describe change"
 docker compose up --build
 ```
 
-Compose 会启动 API、MySQL 和 Redis，并持久化 MySQL、Redis、Chroma 与模型缓存数据。
+Compose 会启动 Web、API、MySQL 和 Redis。Web 工作台地址为 <http://localhost:3000>，并持久化 MySQL、Redis、Chroma 与模型缓存数据。
 
 ## 质量检查
 
@@ -215,4 +231,5 @@ Compose 会启动 API、MySQL 和 Redis，并持久化 MySQL、Redis、Chroma �
 pytest -q
 ruff check .
 python -m compileall -q app tests migrations
+cd frontend && npm run build
 ```

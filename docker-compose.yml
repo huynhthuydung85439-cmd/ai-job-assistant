@@ -1,4 +1,17 @@
 services:
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - backend
+
   api:
     build:
       context: .

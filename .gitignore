@@ -36,3 +36,11 @@ logs/
 tmp/
 data/
 *.log
+
+# Frontend
+node_modules/
+frontend/dist/
+npm-debug.log*
+
+# Local Python virtual environment
+.venv312/
