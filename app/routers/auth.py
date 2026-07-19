@@ -2,10 +2,28 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
+from app.dependencies.auth import get_current_user
+from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest, UserResponse
 from app.services.auth import AuthService, get_auth_service
 
 router = APIRouter(prefix="/auth")
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get the current authenticated user",
+)
+async def current_user_profile(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> UserResponse:
+    return UserResponse(
+        id=current_user.id,
+        username=current_user.username,
+        email=current_user.email,
+    )
 
 
 @router.post(
