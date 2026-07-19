@@ -27,13 +27,18 @@ def test_knowledge_loader_extracts_and_splits_pdf() -> None:
         chunk_overlap=30,
     )
 
-    loaded = loader.load_pdf("job-description.pdf", create_knowledge_pdf())
+    loaded = loader.load_pdf(
+        "job-description.pdf",
+        create_knowledge_pdf(),
+        {"user_id": "42", "collection_name": "test_knowledge"},
+    )
 
     assert loaded.filename == "job-description.pdf"
     assert loaded.pages == 1
     assert len(loaded.chunks) > 1
     assert all(chunk.id for chunk in loaded.chunks)
     assert all(chunk.metadata["source"] == "job-description.pdf" for chunk in loaded.chunks)
+    assert all(chunk.metadata["user_id"] == "42" for chunk in loaded.chunks)
     assert [chunk.metadata["chunk_index"] for chunk in loaded.chunks] == list(
         range(len(loaded.chunks))
     )

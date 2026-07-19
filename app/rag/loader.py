@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from uuid import uuid4
 
 from langchain_core.documents import Document
@@ -32,7 +33,12 @@ class KnowledgeLoader:
             separators=["\n\n", "\n", "。", "！", "？", ". ", " ", ""],
         )
 
-    def load_pdf(self, filename: str, content: bytes) -> LoadedKnowledge:
+    def load_pdf(
+        self,
+        filename: str,
+        content: bytes,
+        metadata: dict[str, Any] | None = None,
+    ) -> LoadedKnowledge:
         parsed = self._pdf_parser.parse(filename=filename, content=content)
         document_id = str(uuid4())
         document = Document(
@@ -42,6 +48,7 @@ class KnowledgeLoader:
                 "filename": parsed.filename,
                 "pages": parsed.pages,
                 "document_id": document_id,
+                **(metadata or {}),
             },
         )
         split_documents = self._splitter.split_documents([document])

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Text, func
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,6 +22,10 @@ class ChatHistory(Base):
     )
     question: Mapped[str] = mapped_column(Text().with_variant(LONGTEXT(), "mysql"))
     answer: Mapped[str] = mapped_column(Text().with_variant(LONGTEXT(), "mysql"))
+    chat_type: Mapped[str] = mapped_column(
+        String(16), default="chat", server_default="chat", index=True
+    )
+    sources_json: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

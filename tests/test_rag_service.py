@@ -9,8 +9,9 @@ class StubRetriever:
     def __init__(self, documents: list[Document]) -> None:
         self.documents = documents
 
-    def retrieve(self, question: str) -> list[Document]:
+    def retrieve(self, question: str, user_id: int) -> list[Document]:
         assert question
+        assert user_id == 7
         return self.documents
 
 
@@ -33,9 +34,10 @@ async def test_rag_service_answers_with_retrieved_sources() -> None:
         model_factory=lambda: FakeListChatModel(
             responses=["该岗位需要 Python、FastAPI、MySQL 和 Docker。"]
         ),
+        collection_name="test_knowledge",
     )
 
-    answer, sources = await service.answer("这个岗位需要哪些技能？")
+    answer, sources = await service.answer("这个岗位需要哪些技能？", user_id=7)
 
     assert answer == "该岗位需要 Python、FastAPI、MySQL 和 Docker。"
     assert sources == ["job-description.pdf"]
@@ -48,9 +50,10 @@ async def test_rag_service_handles_empty_knowledge_base_without_model_call() -> 
         vector_store=object(),
         retriever=StubRetriever([]),
         model_factory=lambda: (_ for _ in ()).throw(AssertionError("model should not be created")),
+        collection_name="test_knowledge",
     )
 
-    answer, sources = await service.answer("未知问题")
+    answer, sources = await service.answer("未知问题", user_id=7)
 
     assert answer == "知识库中没有找到相关资料。"
     assert sources == []

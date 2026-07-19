@@ -11,8 +11,9 @@ from app.core.config import Settings, get_settings
 
 
 class KnowledgeVectorStore:
-    def __init__(self, store: VectorStore) -> None:
+    def __init__(self, store: VectorStore, embeddings: Embeddings | None = None) -> None:
         self.store = store
+        self._embeddings = embeddings
 
     def add_documents(self, documents: list[Document]) -> list[str]:
         document_ids = [document.id for document in documents]
@@ -20,6 +21,22 @@ class KnowledgeVectorStore:
             raise ValueError("Every knowledge document chunk must have an id")
         ids = [str(document_id) for document_id in document_ids]
         return self.store.add_documents(documents=documents, ids=ids)
+
+    def search(self, question: str, user_id: int, top_k: int) -> list[Document]:
+        return self.store.similarity_search(
+            question,
+            k=top_k,
+            filter={"user_id": str(user_id)},
+        )
+
+    def delete(self, ids: list[str]) -> None:
+        if ids:
+            self.store.delete(ids=ids)
+
+    def warmup(self) -> None:
+        if self._embeddings is None:
+            raise RuntimeError("Embedding model is not available for warmup")
+        self._embeddings.embed_query("AI job assistant knowledge base warmup")
 
 
 def create_embeddings(settings: Settings | None = None) -> Embeddings:
@@ -38,14 +55,20 @@ def create_knowledge_vector_store(
     resolved_settings = settings or get_settings()
     persist_directory = Path(resolved_settings.chroma_persist_directory)
     persist_directory.mkdir(parents=True, exist_ok=True)
+    resolved_embeddings = embeddings or create_embeddings(resolved_settings)
     store = Chroma(
         collection_name=resolved_settings.chroma_collection_name,
-        embedding_function=embeddings or create_embeddings(resolved_settings),
+        embedding_function=resolved_embeddings,
         persist_directory=str(persist_directory),
     )
-    return KnowledgeVectorStore(store)
+    return KnowledgeVectorStore(store, resolved_embeddings)
+
+
+@lru_cache
+def get_embedding_model() -> Embeddings:
+    return create_embeddings()
 
 
 @lru_cache
 def get_knowledge_vector_store() -> KnowledgeVectorStore:
-    return create_knowledge_vector_store()
+    return create_knowledge_vector_store(embeddings=get_embedding_model())

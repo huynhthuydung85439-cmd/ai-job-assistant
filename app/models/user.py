@@ -10,6 +10,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.chat_history import ChatHistory
+    from app.models.knowledge_document import KnowledgeDocument
     from app.models.resume import Resume
 
 
@@ -28,5 +29,8 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
     chat_histories: Mapped[list[ChatHistory]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
+    knowledge_documents: Mapped[list[KnowledgeDocument]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )

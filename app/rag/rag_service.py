@@ -33,16 +33,31 @@ class RAGService:
         vector_store: KnowledgeVectorStore,
         retriever: KnowledgeRetriever,
         model_factory: ModelFactory,
+        collection_name: str,
     ) -> None:
         self._loader = loader
         self._vector_store = vector_store
         self._retriever = retriever
         self._model_factory = model_factory
+        self.collection_name = collection_name
         self._chain: Runnable[dict[str, str], str] | None = None
 
-    async def upload_pdf(self, filename: str, content: bytes) -> LoadedKnowledge:
+    async def upload_pdf(
+        self,
+        filename: str,
+        content: bytes,
+        user_id: int,
+    ) -> LoadedKnowledge:
         try:
-            loaded = await run_in_threadpool(self._loader.load_pdf, filename, content)
+            loaded = await run_in_threadpool(
+                self._loader.load_pdf,
+                filename,
+                content,
+                {
+                    "user_id": str(user_id),
+                    "collection_name": self.collection_name,
+                },
+            )
             await run_in_threadpool(self._vector_store.add_documents, loaded.chunks)
             return loaded
         except ApplicationError:
@@ -51,9 +66,11 @@ class RAGService:
             logger.exception("Knowledge base PDF ingestion failed")
             raise KnowledgeBaseError from exc
 
-    async def answer(self, question: str) -> tuple[str, list[str]]:
+    async def answer(self, question: str, user_id: int) -> tuple[str, list[str]]:
         try:
-            documents = await run_in_threadpool(self._retriever.retrieve, question)
+            documents = await run_in_threadpool(
+                self._retriever.retrieve, question, user_id
+            )
         except Exception as exc:
             logger.exception("Knowledge base retrieval failed")
             raise KnowledgeBaseError from exc
@@ -77,6 +94,20 @@ class RAGService:
         if not answer:
             raise LLMServiceError
         return answer, sources
+
+    async def delete_chunks(self, ids: list[str]) -> None:
+        try:
+            await run_in_threadpool(self._vector_store.delete, ids)
+        except Exception as exc:
+            logger.exception("Knowledge base vector deletion failed")
+            raise KnowledgeBaseError from exc
+
+    async def warmup(self) -> None:
+        try:
+            await run_in_threadpool(self._vector_store.warmup)
+        except Exception as exc:
+            logger.exception("Knowledge base embedding warmup failed")
+            raise KnowledgeBaseError from exc
 
     def _get_chain(self) -> Runnable[dict[str, str], str]:
         if self._chain is None:
@@ -118,4 +149,5 @@ def get_rag_service() -> RAGService:
         vector_store=vector_store,
         retriever=KnowledgeRetriever(vector_store, top_k=settings.rag_top_k),
         model_factory=create_deepseek_model,
+        collection_name=settings.chroma_collection_name,
     )

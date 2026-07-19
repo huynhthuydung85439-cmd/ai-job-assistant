@@ -32,5 +32,6 @@ async def chat(
             user_id=current_user.id,
             question=payload.message,
             answer=answer,
+            chat_type="chat",
         )
     return ChatResponse(answer=answer)

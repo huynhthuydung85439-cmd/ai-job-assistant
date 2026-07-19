@@ -42,7 +42,8 @@ class SuccessfulResumeAnalyzer:
 
 
 class SuccessfulRAGService:
-    async def answer(self, question: str) -> tuple[str, list[str]]:
+    async def answer(self, question: str, user_id: int) -> tuple[str, list[str]]:
+        assert user_id > 0
         return f"RAG answer: {question}", ["jd.pdf"]
 
 
@@ -180,6 +181,7 @@ async def test_authenticated_resume_and_analysis_are_persisted(database_client) 
         assert "Python FastAPI" in resume.content
         assert record is not None
         assert record.score == 88
+        assert record.job_description == "Python role requiring Kubernetes"
         assert record.result_json["missing_skills"] == ["Kubernetes"]
 
 
@@ -212,6 +214,7 @@ async def test_authenticated_chat_is_persisted_and_anonymous_chat_still_works(
         assert len(histories) == 1
         assert histories[0].question == "Analyze this role"
         assert histories[0].answer == "AI answer: Analyze this role"
+        assert histories[0].chat_type == "chat"
 
 
 @pytest.mark.asyncio
@@ -237,3 +240,5 @@ async def test_authenticated_rag_chat_is_persisted(database_client) -> None:
         assert len(histories) == 1
         assert histories[0].question == "What skills are required?"
         assert histories[0].answer == "RAG answer: What skills are required?"
+        assert histories[0].chat_type == "rag"
+        assert histories[0].sources_json == ["jd.pdf"]

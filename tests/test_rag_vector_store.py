@@ -19,12 +19,12 @@ def test_chroma_persists_and_retrieves_knowledge(tmp_path) -> None:
         Document(
             id="doc-1",
             page_content="Python FastAPI Kubernetes skills are required.",
-            metadata={"source": "job-description.pdf"},
+            metadata={"source": "job-description.pdf", "user_id": "1"},
         ),
         Document(
             id="doc-2",
             page_content="Behavioral interview preparation guide.",
-            metadata={"source": "interview-guide.pdf"},
+            metadata={"source": "interview-guide.pdf", "user_id": "2"},
         ),
     ]
 
@@ -36,8 +36,9 @@ def test_chroma_persists_and_retrieves_knowledge(tmp_path) -> None:
             persist_directory=str(persist_directory),
         )
     )
-    results = KnowledgeRetriever(reopened_store, top_k=1).retrieve(
-        "Python FastAPI Kubernetes skills are required."
+    results = KnowledgeRetriever(reopened_store, top_k=2).retrieve(
+        "Python FastAPI Kubernetes skills are required.",
+        user_id=1,
     )
 
     assert ids == ["doc-1", "doc-2"]

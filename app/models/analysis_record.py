@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, func
+from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, Text, func
+from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -24,6 +25,9 @@ class AnalysisRecord(Base):
     )
     score: Mapped[int]
     result_json: Mapped[dict[str, Any]] = mapped_column(JSON)
+    job_description: Mapped[str | None] = mapped_column(
+        Text().with_variant(LONGTEXT(), "mysql"), nullable=True
+    )
     create_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -8,6 +8,7 @@ const navigation: Array<{ id: View; label: string; description: string; icon: Ic
   { id: "resume", label: "简历分析", description: "上传与岗位匹配", icon: "resume" },
   { id: "assistant", label: "AI 助手", description: "求职问题咨询", icon: "chat" },
   { id: "knowledge", label: "知识库", description: "资料检索问答", icon: "knowledge" },
+  { id: "history", label: "历史记录", description: "简历与对话回顾", icon: "clock" },
 ];
 
 interface LayoutProps {

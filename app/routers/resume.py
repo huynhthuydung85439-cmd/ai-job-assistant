@@ -51,6 +51,7 @@ async def analyze_resume(
             resume_id=payload.resume_id,
             score=result.score,
             result_json=result.model_dump(),
+            job_description=payload.job_description,
         )
     return result
 

@@ -1,4 +1,4 @@
-export type View = "dashboard" | "resume" | "assistant" | "knowledge";
+export type View = "dashboard" | "resume" | "assistant" | "knowledge" | "history";
 
 export interface UserSession {
   token: string;
@@ -26,6 +26,46 @@ export interface KnowledgeUploadResult {
   filename: string;
   pages: number;
   chunks: number;
+  collection_name: string;
+  uploaded_at: string;
+}
+
+export interface PageResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface ResumeHistoryItem {
+  id: number;
+  filename: string;
+  analysis_count: number;
+  created_at: string;
+}
+
+export interface AnalysisHistoryItem {
+  id: number;
+  resume_id: number;
+  resume_filename: string;
+  score: number;
+  job_title: string;
+  job_description_preview: string;
+  created_at: string;
+}
+
+export interface AnalysisHistoryDetail extends AnalysisHistoryItem {
+  job_description: string | null;
+  result: ResumeAnalysisResult;
+}
+
+export interface ChatHistoryItem {
+  id: number;
+  question: string;
+  answer: string;
+  sources: string[];
+  created_at: string;
 }
 
 export interface Message {

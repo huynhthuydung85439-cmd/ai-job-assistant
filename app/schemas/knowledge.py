@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, Field, StringConstraints
@@ -13,6 +14,20 @@ class KnowledgeUploadResponse(BaseModel):
     filename: str
     pages: int = Field(gt=0)
     chunks: int = Field(gt=0)
+    collection_name: str
+    uploaded_at: datetime
+
+
+class KnowledgeDocumentItem(KnowledgeUploadResponse):
+    pass
+
+
+class KnowledgeDocumentPage(BaseModel):
+    items: list[KnowledgeDocumentItem]
+    total: int = Field(ge=0)
+    page: int = Field(ge=1)
+    page_size: int = Field(ge=1)
+    pages: int = Field(ge=0)
 
 
 class KnowledgeChatRequest(BaseModel):
@@ -22,3 +37,13 @@ class KnowledgeChatRequest(BaseModel):
 class KnowledgeChatResponse(BaseModel):
     answer: str
     sources: list[str]
+
+
+class KnowledgeWarmupResponse(BaseModel):
+    status: str
+    model: str
+
+
+class KnowledgeDeleteResponse(BaseModel):
+    document_id: str
+    deleted: bool
