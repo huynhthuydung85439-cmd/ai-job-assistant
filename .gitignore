@@ -35,6 +35,8 @@ Thumbs.db
 logs/
 tmp/
 data/
+.cache/
+huggingface_cache/
 *.log
 
 # Frontend
