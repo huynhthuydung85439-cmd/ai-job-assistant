@@ -1,13 +1,14 @@
+from __future__ import annotations
+
 import logging
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import Runnable
-
-from app.ai.models.deepseek import create_deepseek_model
 from app.core.exceptions import ApplicationError, LLMServiceError
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.runnables import Runnable
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,9 @@ SYSTEM_PROMPT = """你是一个专业、客观的 AI 求职助手。
 
 class ChatService:
     def __init__(self, model: BaseChatModel) -> None:
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.prompts import ChatPromptTemplate
+
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", SYSTEM_PROMPT),
@@ -44,4 +48,6 @@ class ChatService:
 
 @lru_cache
 def get_chat_service() -> ChatService:
+    from app.ai.models.deepseek import create_deepseek_model
+
     return ChatService(create_deepseek_model())

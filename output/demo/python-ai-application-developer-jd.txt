@@ -1,0 +1,21 @@
+岗位名称：Python / AI 应用开发工程师
+
+岗位职责：
+1. 使用 Python 与 FastAPI 设计和开发 AI 应用后端服务及 RESTful API。
+2. 基于 LangChain 或 LangGraph 构建 RAG 知识库、提示词编排和智能问答流程。
+3. 负责 MySQL 数据建模、Redis 缓存、Docker 容器化和服务部署。
+4. 与前端协作完成 React 应用的接口联调、错误处理和用户体验优化。
+5. 编写 pytest 自动化测试，完善日志、监控、性能与安全措施。
+
+任职要求：
+- 熟练掌握 Python，具备 FastAPI 或同类异步 Web 框架经验。
+- 理解向量检索、Embedding、RAG 基本原理，有 Chroma 或同类向量数据库实践。
+- 熟悉 MySQL、Redis、Docker、Git 和 Linux 基本操作。
+- 能够调用主流大模型 API，并处理结构化输出、超时、重试和异常。
+- 具备良好的 API 设计、测试和跨团队沟通能力。
+
+加分项：
+- 有 Kubernetes、CI/CD 或云平台部署经验。
+- 有前端 React / TypeScript 协作经验。
+
+说明：本岗位 JD 仅用于 AiCareer 项目演示，不代表真实招聘信息。

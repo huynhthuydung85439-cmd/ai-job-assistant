@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     deepseek_timeout_seconds: float = Field(default=60, gt=0)
     deepseek_max_retries: int = Field(default=2, ge=0, le=10)
 
+    rag_enabled: bool = True
     chroma_persist_directory: str = "./data/chroma"
     chroma_collection_name: str = "job_assistant_knowledge"
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"

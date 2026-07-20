@@ -4,5 +4,6 @@ from pydantic import BaseModel
 
 
 class HealthResponse(BaseModel):
-    status: Literal["ok"]
-
+    status: Literal["ok", "degraded"]
+    database: Literal["ok", "unavailable"]
+    rag_enabled: bool

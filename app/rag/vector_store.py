@@ -1,13 +1,12 @@
 from functools import lru_cache
 from pathlib import Path
 
-from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from langchain_huggingface import HuggingFaceEmbeddings
 
 from app.core.config import Settings, get_settings
+from app.core.exceptions import RAGDisabledError
 
 
 class KnowledgeVectorStore:
@@ -41,6 +40,12 @@ class KnowledgeVectorStore:
 
 def create_embeddings(settings: Settings | None = None) -> Embeddings:
     resolved_settings = settings or get_settings()
+    if not resolved_settings.rag_enabled:
+        raise RAGDisabledError
+
+    # Keep the model integration out of the import path when RAG is disabled.
+    from langchain_huggingface import HuggingFaceEmbeddings
+
     return HuggingFaceEmbeddings(
         model_name=resolved_settings.embedding_model,
         model_kwargs={"device": resolved_settings.embedding_device},
@@ -53,6 +58,13 @@ def create_knowledge_vector_store(
     embeddings: Embeddings | None = None,
 ) -> KnowledgeVectorStore:
     resolved_settings = settings or get_settings()
+    if not resolved_settings.rag_enabled:
+        raise RAGDisabledError
+
+    # Chroma is imported only after the feature flag check so preview mode does
+    # not initialize the client or touch its persistence directory.
+    from langchain_chroma import Chroma
+
     persist_directory = Path(resolved_settings.chroma_persist_directory)
     persist_directory.mkdir(parents=True, exist_ok=True)
     resolved_embeddings = embeddings or create_embeddings(resolved_settings)

@@ -1,8 +1,12 @@
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_deepseek import ChatDeepSeek
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from app.core.config import Settings, get_settings
 from app.core.exceptions import LLMConfigurationError
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.chat_models import BaseChatModel
 
 
 def create_deepseek_model(settings: Settings | None = None) -> BaseChatModel:
@@ -13,6 +17,8 @@ def create_deepseek_model(settings: Settings | None = None) -> BaseChatModel:
         raise LLMConfigurationError
 
     try:
+        from langchain_deepseek import ChatDeepSeek
+
         return ChatDeepSeek(
             model=resolved_settings.deepseek_model,
             api_key=resolved_settings.deepseek_api_key,

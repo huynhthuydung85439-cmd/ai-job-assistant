@@ -70,6 +70,11 @@ flowchart LR
 
 登录用户可上传招聘 JD、面试资料等 PDF。系统解析并切分文本，生成向量后写入持久化 Chroma；提问时只检索当前用户的文档，并返回答案及来源文件。
 
+本地 Docker Compose 默认设置 `RAG_ENABLED=true`，保留完整的模型下载、Chroma
+持久化和知识库功能。CloudBase 求职展示预览版设置 `RAG_ENABLED=false`，暂时关闭
+知识库上传、预热和 RAG 问答，注册登录、简历解析、JD 匹配、普通 AI 对话及历史记录
+不受影响。后续版本将迁移到独立向量数据库服务后再开放云端 RAG。
+
 ### 历史记录
 
 工作台按分类展示当前用户的简历、匹配分析、普通 AI 对话和 RAG 问答，列表接口支持分页，分析记录支持查看详情。
@@ -157,6 +162,7 @@ JWT_EXPIRE_MINUTES=<token-expiration-minutes>
 DEEPSEEK_API_KEY=<your-deepseek-api-key>
 DEEPSEEK_MODEL=<deepseek-model-name>
 
+RAG_ENABLED=<true-or-false>
 CHROMA_PERSIST_DIRECTORY=<chroma-data-directory>
 CHROMA_COLLECTION_NAME=<chroma-collection-name>
 EMBEDDING_MODEL=<embedding-model-name>
@@ -219,6 +225,7 @@ cd frontend && npm run build
 ## 项目文档
 
 - [架构说明](docs/architecture.md)
+- [CloudBase 预览版部署配置](docs/deploy-cloudbase.md)
 - [演示指南](docs/demo-guide.md)
 - [面试讲解笔记](docs/interview-notes.md)
 

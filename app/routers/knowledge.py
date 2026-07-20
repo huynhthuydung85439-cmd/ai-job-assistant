@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.exceptions import (
     PDFTooLargeError,
+    RAGDisabledError,
     ResourceNotFoundError,
     UnsupportedPDFError,
 )
@@ -42,8 +43,16 @@ from app.services.records import save_chat_history, save_knowledge_document
 router = APIRouter(prefix="/knowledge")
 
 
+def require_rag_enabled(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    if not settings.rag_enabled:
+        raise RAGDisabledError
+
+
 @router.post(
     "/upload",
+    dependencies=[Depends(require_rag_enabled)],
     response_model=KnowledgeUploadResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Upload a PDF to the knowledge base",
@@ -149,6 +158,7 @@ async def list_knowledge_documents(
 
 @router.delete(
     "/documents/{document_id}",
+    dependencies=[Depends(require_rag_enabled)],
     response_model=KnowledgeDeleteResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete a knowledge document and its vectors",
@@ -175,6 +185,7 @@ async def delete_knowledge_document(
 
 @router.post(
     "/warmup",
+    dependencies=[Depends(require_rag_enabled)],
     response_model=KnowledgeWarmupResponse,
     status_code=status.HTTP_200_OK,
     summary="Warm up the authenticated user's knowledge embedding service",
@@ -190,6 +201,7 @@ async def warmup_knowledge(
 
 @router.post(
     "/chat",
+    dependencies=[Depends(require_rag_enabled)],
     response_model=KnowledgeChatResponse,
     status_code=status.HTTP_200_OK,
     summary="Answer a question using the knowledge base",

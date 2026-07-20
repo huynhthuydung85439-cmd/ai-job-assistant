@@ -43,6 +43,12 @@ class KnowledgeBaseError(ApplicationError):
     public_message = "知识库服务暂时不可用，请稍后重试。"
 
 
+class RAGDisabledError(ApplicationError):
+    status_code = 503
+    error_code = "rag_disabled"
+    public_message = "云端预览版暂未开放知识库 RAG 功能。"
+
+
 class AuthConfigurationError(ApplicationError):
     status_code = 503
     error_code = "auth_not_configured"

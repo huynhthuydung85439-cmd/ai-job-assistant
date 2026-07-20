@@ -1,14 +1,15 @@
+from __future__ import annotations
+
 import logging
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import Runnable
-
-from app.ai.models.deepseek import create_deepseek_model
 from app.core.exceptions import ApplicationError, LLMServiceError
 from app.schemas.resume import ResumeAnalysisResponse
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.runnables import Runnable
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,9 @@ SYSTEM_PROMPT = """你是一名严谨的技术招聘顾问和简历优化专家�
 
 class ResumeAnalyzerService:
     def __init__(self, model: BaseChatModel) -> None:
+        from langchain_core.output_parsers import PydanticOutputParser
+        from langchain_core.prompts import ChatPromptTemplate
+
         parser = PydanticOutputParser(pydantic_object=ResumeAnalysisResponse)
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -70,4 +74,6 @@ class ResumeAnalyzerService:
 
 @lru_cache
 def get_resume_analyzer_service() -> ResumeAnalyzerService:
+    from app.ai.models.deepseek import create_deepseek_model
+
     return ResumeAnalyzerService(create_deepseek_model())

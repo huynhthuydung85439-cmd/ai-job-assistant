@@ -1,9 +1,12 @@
+import pytest
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings import DeterministicFakeEmbedding
 
+from app.core.config import Settings
+from app.core.exceptions import RAGDisabledError
 from app.rag.retriever import KnowledgeRetriever
-from app.rag.vector_store import KnowledgeVectorStore
+from app.rag.vector_store import KnowledgeVectorStore, create_knowledge_vector_store
 
 
 def test_chroma_persists_and_retrieves_knowledge(tmp_path) -> None:
@@ -44,3 +47,17 @@ def test_chroma_persists_and_retrieves_knowledge(tmp_path) -> None:
     assert ids == ["doc-1", "doc-2"]
     assert len(results) == 1
     assert results[0].metadata["source"] == "job-description.pdf"
+
+
+def test_disabled_rag_does_not_create_chroma_directory(tmp_path) -> None:
+    persist_directory = tmp_path / "must-not-exist"
+    settings = Settings(
+        _env_file=None,
+        rag_enabled=False,
+        chroma_persist_directory=str(persist_directory),
+    )
+
+    with pytest.raises(RAGDisabledError):
+        create_knowledge_vector_store(settings=settings)
+
+    assert not persist_directory.exists()

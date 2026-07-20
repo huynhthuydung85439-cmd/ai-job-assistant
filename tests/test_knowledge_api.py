@@ -2,6 +2,7 @@ import pytest
 from langchain_core.documents import Document
 from sqlalchemy import select
 
+from app.core.config import get_settings
 from app.main import app
 from app.models import KnowledgeDocument
 from app.rag.loader import LoadedKnowledge
@@ -199,3 +200,42 @@ async def test_knowledge_chat_warmup_and_validation(
     )
     assert non_pdf.status_code == 415
     assert non_pdf.json()["code"] == "unsupported_pdf"
+
+
+@pytest.mark.asyncio
+async def test_cloud_preview_disables_rag_without_initializing_service(
+    database_client,  # noqa: F811
+) -> None:
+    client, _ = database_client
+    _, token = await register_and_login(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    enabled_settings = app.dependency_overrides[get_settings]()
+    disabled_settings = enabled_settings.model_copy(update={"rag_enabled": False})
+    app.dependency_overrides[get_settings] = lambda: disabled_settings
+
+    def fail_if_service_is_initialized():
+        raise AssertionError("RAG service must not initialize in preview mode")
+
+    app.dependency_overrides[get_rag_service] = fail_if_service_is_initialized
+
+    responses = [
+        await client.post(
+            "/api/v1/knowledge/upload",
+            files={"file": ("jd.pdf", b"%PDF-test", "application/pdf")},
+            headers=headers,
+        ),
+        await client.post("/api/v1/knowledge/warmup", headers=headers),
+        await client.post(
+            "/api/v1/knowledge/chat",
+            json={"question": "What skills are required?"},
+            headers=headers,
+        ),
+    ]
+
+    assert [response.status_code for response in responses] == [503, 503, 503]
+    assert [response.json()["code"] for response in responses] == [
+        "rag_disabled",
+        "rag_disabled",
+        "rag_disabled",
+    ]
+    assert all("预览版暂未开放" in response.json()["detail"] for response in responses)

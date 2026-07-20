@@ -109,7 +109,7 @@ export function HistoryPage({ session, notify, onRequireAuth }: HistoryPageProps
 
   return (
     <div className="history-page page-stack">
-      <section className="page-heading-row"><div><p className="eyebrow">YOUR ACTIVITY</p><h1>历史记录</h1><p className="page-subtitle">当前共找到 {total} 条{tabs.find((tab) => tab.id === activeTab)?.label}记录。</p></div></section>
+      <section className="page-heading-row"><div><p className="eyebrow">YOUR ACTIVITY</p><h1>历史记录</h1><p className="page-subtitle">当前共找到 {total} 条{tabs.find((tab) => tab.id === activeTab)?.label}。</p></div></section>
       <section className="history-shell panel-card">
         <div className="history-tabs" role="tablist" aria-label="历史记录分类">
           {tabs.map((tab) => <button key={tab.id} role="tab" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "active" : ""} onClick={() => changeTab(tab.id)}>{tab.label}</button>)}

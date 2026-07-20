@@ -12,8 +12,19 @@ import type {
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
 interface ApiErrorPayload {
-  detail?: string;
+  detail?: string | Array<{ msg?: string }>;
   code?: string;
+}
+
+function apiErrorMessage(detail: ApiErrorPayload["detail"], fallback: string) {
+  if (typeof detail === "string" && detail.trim()) return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail.flatMap((item) =>
+      typeof item.msg === "string" && item.msg.trim() ? [item.msg] : [],
+    );
+    if (messages.length) return messages.join("；");
+  }
+  return fallback;
 }
 
 async function request<T>(
@@ -34,7 +45,7 @@ async function request<T>(
     let message = `请求失败（${response.status}）`;
     try {
       const payload = (await response.json()) as ApiErrorPayload;
-      message = payload.detail || message;
+      message = apiErrorMessage(payload.detail, message);
     } catch {
       // Preserve the HTTP status fallback when the server did not return JSON.
     }
