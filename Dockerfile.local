@@ -3,22 +3,19 @@ FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    RAG_ENABLED=false
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
 
 RUN groupadd --system app && useradd --system --gid app --home-dir /app app
+RUN mkdir -p /app/data /app/.cache/huggingface && chown -R app:app /app/data /app/.cache
 
-COPY requirements-cloud.txt ./
-RUN pip install --no-cache-dir -r requirements-cloud.txt
+COPY requirements.txt ./
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=app:app alembic.ini ./
 COPY --chown=app:app app ./app
 COPY --chown=app:app migrations ./migrations
-COPY --chown=app:app scripts/check_cloud_runtime.py ./scripts/check_cloud_runtime.py
-
-RUN python -m scripts.check_cloud_runtime --require-absent
 
 USER app
 

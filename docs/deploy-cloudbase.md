@@ -17,10 +17,17 @@ RAG_ENABLED=false
 “云端预览版暂未开放知识库 RAG 功能”，应用不会加载 sentence-transformers、下载
 Hugging Face 模型、初始化 Chroma 或创建 `/app/data/chroma`。
 
+CloudBase 使用仓库根目录的 `Dockerfile` 和 `requirements-cloud.txt`。该依赖集只包含
+Web API、数据库、认证、PDF 解析以及普通 DeepSeek 对话所需组件，不包含 Torch、CUDA、
+NVIDIA、sentence-transformers、Transformers、Chroma 或本地嵌入模型依赖。镜像构建时会
+自动执行 `scripts/check_cloud_runtime.py`，验证禁用态导入、健康路由、RAG 503 响应和禁用包
+缺失状态。
+
 ## 本地 Docker
 
 本地 Docker Compose 默认设置 `RAG_ENABLED=true`，继续使用命名卷持久化 Chroma 数据和
-Hugging Face 模型缓存，完整 RAG 开发与演示流程保持不变。
+Hugging Face 模型缓存。Compose 明确使用 `Dockerfile.local` 和完整的 `requirements.txt`，
+完整 RAG 开发与演示流程保持不变。
 
 ```bash
 docker compose up -d --build
