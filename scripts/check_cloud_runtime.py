@@ -8,6 +8,7 @@ import importlib
 import json
 import sys
 from importlib import metadata
+from pathlib import Path
 from typing import Any
 
 FORBIDDEN_IMPORTS = (
@@ -43,6 +44,13 @@ ORDINARY_FEATURE_MODULES = (
     "app.services.resume_analyzer",
 )
 
+ALEMBIC_RUNTIME_PATHS = (
+    "alembic.ini",
+    "migrations/env.py",
+    "migrations/script.py.mako",
+    "migrations/versions",
+)
+
 
 def normalized_distribution_name(name: str) -> str:
     return name.lower().replace("_", "-").replace(".", "-")
@@ -70,6 +78,11 @@ def find_imported_rag_modules() -> list[str]:
             for prefix in FORBIDDEN_IMPORTS
         )
     )
+
+
+def find_missing_alembic_runtime_paths(root: Path | None = None) -> list[str]:
+    runtime_root = root or Path.cwd()
+    return [path for path in ALEMBIC_RUNTIME_PATHS if not (runtime_root / path).exists()]
 
 
 def collect_route_paths(routes: list[Any], prefix: str = "") -> set[str]:
@@ -131,6 +144,12 @@ async def call_asgi(application: Any, method: str, path: str) -> tuple[int, dict
 
 
 async def validate(require_absent: bool) -> dict[str, Any]:
+    missing_alembic_paths = find_missing_alembic_runtime_paths()
+    if missing_alembic_paths:
+        raise AssertionError(
+            "Cloud image is missing Alembic runtime paths: " + ", ".join(missing_alembic_paths)
+        )
+
     main_module = importlib.import_module("app.main")
     application = main_module.app
 
@@ -174,6 +193,7 @@ async def validate(require_absent: bool) -> dict[str, Any]:
         "ordinary_feature_imports": "ok",
         "forbidden_rag_imports": imported_rag_modules,
         "forbidden_distributions": forbidden_distributions,
+        "alembic_runtime_paths": "ok",
     }
 
 

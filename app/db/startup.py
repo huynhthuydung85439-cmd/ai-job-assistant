@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import subprocess
 import sys
 from time import monotonic
+from urllib.parse import quote
 
 from sqlalchemy import text
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -31,6 +34,14 @@ _MYSQL_ERROR_DESCRIPTIONS = {
     2006: "database connection was lost",
     2013: "database connection was lost",
 }
+
+_DATABASE_URL_PATTERN = re.compile(
+    r"(?i)\b(?:mysql|postgresql|sqlite)(?:\+[a-z0-9_]+)?:/{2,3}[^\s\"'<>]+"
+)
+_SECRET_ASSIGNMENT_PATTERN = re.compile(
+    r"(?i)\b(database_url|password|passwd|pwd|username|user|api[_-]?key|secret|token)"
+    r"(\s*[:=]\s*)(\"[^\"]*\"|'[^']*'|[^\s,;]+)"
+)
 
 
 def _positive_number_from_env(name: str, default: float) -> float:
@@ -117,6 +128,93 @@ def _describe_database_error(exc: BaseException) -> str:
     return f"{error_type}: {description}"
 
 
+def _database_sensitive_values(database_url: URL | None) -> list[str]:
+    if database_url is None:
+        return []
+
+    sensitive_values: set[str] = set()
+    for value in (database_url.username, database_url.password):
+        if value:
+            sensitive_values.add(value)
+            sensitive_values.add(quote(value, safe=""))
+    return sorted(sensitive_values, key=len, reverse=True)
+
+
+def _sanitize_alembic_output(output: str, database_url: URL | None) -> str:
+    sanitized = _DATABASE_URL_PATTERN.sub("<redacted-database-url>", output)
+    for sensitive_value in _database_sensitive_values(database_url):
+        sanitized = sanitized.replace(sensitive_value, "<redacted>")
+    return _SECRET_ASSIGNMENT_PATTERN.sub(
+        lambda match: f"{match.group(1)}{match.group(2)}<redacted>",
+        sanitized,
+    ).strip()
+
+
+def _describe_alembic_failure(stdout: str, stderr: str) -> str:
+    output = f"{stdout}\n{stderr}".lower()
+    if "interpolation syntax" in output or "interpolationerror" in output:
+        return "Alembic configuration interpolation failed"
+    if "access denied" in output or "authentication failed" in output:
+        return "database authentication or authorization failed"
+    if "unknown database" in output:
+        return "database does not exist"
+    if "already exists" in output or "duplicate column" in output:
+        return "migration conflicts with the existing database schema"
+    if "can't locate revision" in output or "no such revision" in output:
+        return "migration revision is missing"
+    if any(
+        marker in output
+        for marker in ("can't connect", "connection refused", "timed out", "timeout")
+    ):
+        return "database connection failed during migration"
+    if "no module named" in output and "alembic" in output:
+        return "Alembic is not installed in the runtime image"
+    return "Alembic command failed"
+
+
+def _print_alembic_streams(
+    stdout: str,
+    stderr: str,
+    database_url: URL | None,
+    *,
+    include_empty: bool,
+) -> None:
+    for stream_name, stream_value in (("stdout", stdout), ("stderr", stderr)):
+        sanitized = _sanitize_alembic_output(stream_value, database_url)
+        if not sanitized and not include_empty:
+            continue
+        destination = sys.stderr if stream_name == "stderr" else sys.stdout
+        print(
+            f"Alembic {stream_name} (sanitized):\n{sanitized or '<empty>'}",
+            file=destination,
+            flush=True,
+        )
+
+
+def _print_alembic_failure(
+    *,
+    exception_type: str,
+    reason: str,
+    stdout: str,
+    stderr: str,
+    return_code: int | None,
+    database_url: URL | None,
+) -> None:
+    code_text = str(return_code) if return_code is not None else "unavailable"
+    print(
+        "Alembic upgrade failed; "
+        f"exception_type={exception_type}; reason={reason}; return_code={code_text}.",
+        file=sys.stderr,
+        flush=True,
+    )
+    _print_alembic_streams(
+        stdout,
+        stderr,
+        database_url,
+        include_empty=True,
+    )
+
+
 def _create_engine() -> AsyncEngine:
     database_url = get_settings().database_url
     connect_args: dict[str, float] = {}
@@ -162,11 +260,45 @@ async def _wait_for_database(engine: AsyncEngine) -> None:
             await asyncio.sleep(min(retry_interval, remaining))
 
 
-def _run_alembic_upgrade() -> None:
+def _run_alembic_upgrade(database_url: URL | None = None) -> None:
     print("Running Alembic upgrade to head.", flush=True)
-    subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        check=True,
+    command = [sys.executable, "-m", "alembic", "upgrade", "head"]
+    try:
+        result = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except Exception as exc:
+        _print_alembic_failure(
+            exception_type=type(exc).__name__,
+            reason="Alembic process could not be started",
+            stdout="",
+            stderr="",
+            return_code=None,
+            database_url=database_url,
+        )
+        raise
+
+    if result.returncode != 0:
+        _print_alembic_failure(
+            exception_type="CalledProcessError",
+            reason=_describe_alembic_failure(result.stdout, result.stderr),
+            stdout=result.stdout,
+            stderr=result.stderr,
+            return_code=result.returncode,
+            database_url=database_url,
+        )
+        raise subprocess.CalledProcessError(result.returncode, command) from None
+
+    _print_alembic_streams(
+        result.stdout,
+        result.stderr,
+        database_url,
+        include_empty=False,
     )
 
 
@@ -183,7 +315,7 @@ async def _migrate_with_mysql_lock(engine: AsyncEngine) -> None:
             )
 
         try:
-            _run_alembic_upgrade()
+            _run_alembic_upgrade(engine.url)
         finally:
             await connection.execute(
                 text("SELECT RELEASE_LOCK(:lock_name)"),
@@ -198,7 +330,7 @@ async def prepare_database() -> None:
         if engine.dialect.name == "mysql":
             await _migrate_with_mysql_lock(engine)
         else:
-            _run_alembic_upgrade()
+            _run_alembic_upgrade(engine.url)
     finally:
         await engine.dispose()
 

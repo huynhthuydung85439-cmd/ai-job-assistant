@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
+from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
 
 from app.db import startup
@@ -77,3 +78,57 @@ async def test_wait_for_database_logs_only_sanitized_error(monkeypatch, capsys):
 
 async def _no_sleep(_seconds: float) -> None:
     return None
+
+
+def test_run_alembic_upgrade_reports_sanitized_process_failure(monkeypatch, capsys):
+    database_url = URL.create(
+        "mysql+asyncmy",
+        username="sensitive-user",
+        password="sensitive-password!",
+        host="db.example",
+        port=3306,
+        database="example",
+    )
+    rendered_url = database_url.render_as_string(hide_password=False)
+    result = startup.subprocess.CompletedProcess(
+        args=[],
+        returncode=1,
+        stdout=f"database_url={rendered_url}",
+        stderr=(
+            "OperationalError: Access denied for user 'sensitive-user'; "
+            "password=sensitive-password!"
+        ),
+    )
+    monkeypatch.setattr(startup.subprocess, "run", lambda *args, **kwargs: result)
+
+    with pytest.raises(startup.subprocess.CalledProcessError) as raised:
+        startup._run_alembic_upgrade(database_url)
+
+    captured = capsys.readouterr()
+    output = f"{captured.out}\n{captured.err}"
+    assert raised.value.returncode == 1
+    assert "exception_type=CalledProcessError" in output
+    assert "reason=database authentication or authorization failed" in output
+    assert "return_code=1" in output
+    assert "Alembic stdout (sanitized)" in output
+    assert "Alembic stderr (sanitized)" in output
+    assert "database_url=<redacted>" in output
+    assert rendered_url not in output
+    assert "sensitive-user" not in output
+    assert "sensitive-password" not in output
+
+
+def test_run_alembic_upgrade_reports_process_start_failure(monkeypatch, capsys):
+    def fail_to_start(*args, **kwargs):
+        raise FileNotFoundError("sensitive command detail")
+
+    monkeypatch.setattr(startup.subprocess, "run", fail_to_start)
+
+    with pytest.raises(FileNotFoundError):
+        startup._run_alembic_upgrade()
+
+    output = capsys.readouterr().err
+    assert "exception_type=FileNotFoundError" in output
+    assert "reason=Alembic process could not be started" in output
+    assert "return_code=unavailable" in output
+    assert "sensitive command detail" not in output
