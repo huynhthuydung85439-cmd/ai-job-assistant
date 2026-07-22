@@ -2,11 +2,15 @@
 
 面向求职场景的一站式 AI 工作台，提供简历解析、岗位匹配、智能对话与个人 RAG 知识库能力。
 
+在线演示：<https://ai-job-assistant-d5ehi66ba6134c4-1456116636.tcloudbaseapp.com/#/>
+
+CloudBase 在线预览版已上线，支持注册登录、PDF 简历解析、JD 匹配、普通 AI 对话和历史记录；云端暂未开放 RAG，本地 Docker 版支持完整 RAG。
+
 | 项目状态 | 结果 |
 | --- | --- |
-| 当前版本 | **v0.2.0 MVP**（仓库现有 `v0.1.0` Tag，尚未创建 `v0.2.0` Tag 或 GitHub Release） |
+| 当前版本 | **v0.2.0 MVP** |
 | 自动化测试 | 覆盖认证、简历解析、JD 匹配、AI 对话、RAG、历史记录、数据库启动和迁移；最新结果以 `pytest` 或 CI 为准 |
-| 部署形态 | 本地 Docker 完整版 + CloudBase 在线预览配置（线上状态需以实际 CloudBase 服务配置确认） |
+| 部署形态 | 本地 Docker 完整版 + 已上线的 CloudBase 在线预览版 |
 
 ## 核心功能
 
@@ -266,7 +270,7 @@ cd frontend && npm run build
 
 ## 版本说明
 
-当前代码以 `v0.2.0 MVP` 描述。仓库存在 `v0.1.0` Tag，但没有对应的 GitHub Release；CloudBase 在线服务是否可用及其前后端部署方式需以实际服务配置为准。
+当前正式版本为 `v0.2.0 MVP`，annotated tag 已创建并推送，GitHub Release 已发布。当前 `main` 对应发布提交为 `72ba12a1d4a8199030851353a695c9db90765738`，CloudBase 在线预览版已上线。
 
 ## 已知限制
 
