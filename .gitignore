@@ -18,6 +18,11 @@ env/
 .env.*
 !.env.example
 
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
 # Test and tooling caches
 .pytest_cache/
 .mypy_cache/
@@ -34,10 +39,17 @@ Thumbs.db
 # Runtime files
 logs/
 tmp/
-data/
+/data/
 .cache/
 huggingface_cache/
 *.log
+
+# User uploads and temporary upload staging
+/uploads/
+/resumes/
+/resume_uploads/
+/tmp_uploads/
+/temp_uploads/
 
 # Frontend
 node_modules/
