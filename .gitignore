@@ -46,3 +46,4 @@ npm-debug.log*
 
 # Local Python virtual environment
 .venv312/
+/frontend-cloudbase.zip

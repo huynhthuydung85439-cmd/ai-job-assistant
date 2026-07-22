@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { getCurrentUser } from "./api";
 import { AuthModal } from "./components/AuthModal";
@@ -35,7 +36,9 @@ function readSession(): UserSession | null {
 }
 
 export default function App() {
-  const [view, setView] = useState<View>(() => viewFromPath(window.location.pathname));
+  const location = useLocation();
+  const routerNavigate = useNavigate();
+  const view = viewFromPath(location.pathname);
   const [session, setSession] = useState<UserSession | null>(readSession);
   const [sessionReady, setSessionReady] = useState(() => readSession() === null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("aicareer.theme") === "dark");
@@ -53,12 +56,6 @@ export default function App() {
     const timer = window.setTimeout(() => setToast(null), 3200);
     return () => window.clearTimeout(timer);
   }, [toast]);
-
-  useEffect(() => {
-    const handlePopState = () => setView(viewFromPath(window.location.pathname));
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
 
   useEffect(() => {
     if (!session) {
@@ -88,9 +85,7 @@ export default function App() {
   }, [session?.token]);
 
   function navigate(nextView: View) {
-    const path = routeByView[nextView];
-    if (window.location.pathname !== path) window.history.pushState({}, "", path);
-    setView(nextView);
+    routerNavigate(routeByView[nextView]);
   }
 
   function handleAuthenticated(nextSession: UserSession) {
