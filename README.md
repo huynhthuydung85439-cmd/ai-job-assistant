@@ -4,9 +4,9 @@
 
 | 项目状态 | 结果 |
 | --- | --- |
-| 当前版本 | **v0.1.0 · 已正式发布** |
-| 自动化测试 | **31 passed** |
-| Docker 全栈 | **已就绪**：React/Nginx、FastAPI、MySQL、Redis，Chroma 与业务数据支持持久化 |
+| 当前版本 | **v0.1.0 MVP**（仓库存在同名 Tag，未创建 GitHub Release） |
+| 自动化测试 | 覆盖认证、简历解析、JD 匹配、AI 对话、RAG、历史记录、数据库启动和迁移；最新结果以 `pytest` 或 CI 为准 |
+| 部署形态 | 本地 Docker 完整版 + CloudBase 在线预览配置（线上状态需以实际 CloudBase 服务配置确认） |
 
 ## 核心功能
 
@@ -48,6 +48,20 @@ flowchart LR
 
 详细设计见 [docs/architecture.md](docs/architecture.md)。
 
+## 运行版本边界
+
+| 能力 | CloudBase 在线预览版 | 本地 Docker 完整版 |
+| --- | --- | --- |
+| 注册与登录、文本型 PDF 简历解析 | 支持 | 支持 |
+| 简历与 JD 匹配、普通 AI 对话、历史记录 | 支持 | 支持 |
+| MySQL 数据持久化 | 支持 | 支持 |
+| 知识库 PDF 上传、Embedding 预热 | 暂不支持 | 支持 |
+| Chroma 检索、RAG 问答和来源引用 | 暂不支持 | 支持 |
+
+CloudBase 在线预览版设置 `RAG_ENABLED=false`；本地 Docker Compose 默认设置
+`RAG_ENABLED=true`，并持久化 Chroma 数据与 Hugging Face 模型缓存。前端和后端的
+实际线上部署方式需根据 CloudBase 服务配置确认，不能仅由仓库代码推断。
+
 ## 功能说明
 
 ### 用户注册登录
@@ -81,7 +95,7 @@ flowchart LR
 
 ### 用户数据隔离
 
-MySQL 查询通过 `user_id` 限定数据所有权，知识库向量以用户元数据过滤。用户不能读取、关联或删除其他用户的简历、分析记录、对话和知识文档。
+所有现有资源查询均按当前用户隔离；分析详情和知识文档删除会校验资源所有权。简历、分析记录和聊天记录的删除能力暂未开放。
 
 ### Docker 持久化
 
@@ -89,11 +103,13 @@ Compose 使用命名卷保存 MySQL、Redis、Chroma 和 Hugging Face 模型缓�
 
 ## 项目截图
 
-截图目录已预留为 [`docs/images/`](docs/images/)。添加截图后可启用以下位置：
+以下截图来自仓库中的本地演示资料，使用虚构简历和岗位内容，不包含可用登录凭证。
 
-<!-- ![AI 求职助手首页](docs/images/dashboard.png) -->
-<!-- ![简历与 JD 匹配](docs/images/resume-analysis.png) -->
-<!-- ![个人 RAG 知识库](docs/images/knowledge-base.png) -->
+![简历与 JD 输入](output/demo/screenshots/02-resume-and-jd.png)
+
+![历史分析详情](output/demo/screenshots/06-history-analysis-detail.png)
+
+知识库和 RAG 相关截图来自本地 Docker 完整版；CloudBase 在线预览版暂未开放这些功能。
 
 ## Docker 快速启动
 
@@ -117,7 +133,7 @@ Copy-Item .env.example .env
 docker compose up -d --build
 ```
 
-首次启动或数据库版本变化后执行迁移：
+API 容器启动时会自动等待数据库并执行 Alembic 迁移。只有自动迁移失败或需要单独排查时，才手动执行：
 
 ```bash
 docker compose run --rm api alembic upgrade head
@@ -142,33 +158,33 @@ docker compose ps
 仓库提供 `.env.example`。以下示例仅使用占位符，必须按实际部署环境替换：
 
 ```dotenv
-APP_ENV=<development-or-production>
-APP_DEBUG=<true-or-false>
-APP_PORT=<api-port>
-WEB_PORT=<web-port>
+APP_ENV=development
+APP_DEBUG=false
+APP_PORT=8000
+WEB_PORT=3000
 
 MYSQL_DATABASE=<database-name>
 MYSQL_USER=<database-user>
 MYSQL_PASSWORD=<database-password>
-MYSQL_ROOT_PASSWORD=<database-root-password>
-DATABASE_URL=mysql+asyncmy://<database-user>:<database-password>@mysql:3306/<database-name>?charset=utf8mb4
+MYSQL_ROOT_PASSWORD=<database-password>
+DATABASE_URL=mysql+asyncmy://<database-user>:<url-encoded-password>@<internal-database-host>:3306/<database-name>?charset=utf8mb4
 
 REDIS_URL=redis://redis:6379/0
 
-JWT_SECRET_KEY=<long-random-jwt-signing-secret>
-JWT_ALGORITHM=<jwt-algorithm>
-JWT_EXPIRE_MINUTES=<token-expiration-minutes>
+JWT_SECRET_KEY=<long-random-jwt-secret>
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=1440
 
 DEEPSEEK_API_KEY=<your-deepseek-api-key>
-DEEPSEEK_MODEL=<deepseek-model-name>
+DEEPSEEK_MODEL=deepseek-chat
 
-RAG_ENABLED=<true-or-false>
-CHROMA_PERSIST_DIRECTORY=<chroma-data-directory>
-CHROMA_COLLECTION_NAME=<chroma-collection-name>
-EMBEDDING_MODEL=<embedding-model-name>
-RAG_CHUNK_SIZE=<chunk-size>
-RAG_CHUNK_OVERLAP=<chunk-overlap>
-RAG_TOP_K=<retrieval-count>
+RAG_ENABLED=true
+CHROMA_PERSIST_DIRECTORY=/app/data/chroma
+CHROMA_COLLECTION_NAME=job_assistant_knowledge
+EMBEDDING_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+RAG_CHUNK_SIZE=800
+RAG_CHUNK_OVERLAP=120
+RAG_TOP_K=4
 ```
 
 安全要求：
@@ -176,6 +192,7 @@ RAG_TOP_K=<retrieval-count>
 - 禁止提交 `.env`、API Key、JWT 签名密钥、数据库密码或访问令牌。
 - 每个环境应使用独立且足够长的随机 `JWT_SECRET_KEY`。
 - 生产环境应关闭调试模式，并通过外部密钥管理方案注入敏感变量。
+- 数据库密码包含 `@`、`:`、`/`、`#`、`%` 等字符时，必须先进行 URL 编码再写入 `DATABASE_URL`。
 
 ## 本地开发
 
@@ -213,7 +230,7 @@ docker-compose.yml           全栈服务与持久卷编排
 
 ## 质量检查
 
-v0.1.0 自动化测试结果：`31 passed`。
+自动化测试覆盖认证、简历解析、JD 匹配、AI 对话、RAG、历史记录、数据库启动和迁移。最新测试结果请以 `pytest` 或 CI 状态为准。
 
 ```bash
 pytest -q
@@ -231,4 +248,14 @@ cd frontend && npm run build
 
 ## 版本说明
 
-`v0.1.0` 是首个正式发布版本，已完成核心求职工作流、用户数据隔离、自动化测试与 Docker 全栈部署。本版本聚焦项目展示和稳定运行，不包含后续业务功能扩展。
+当前代码以 `v0.1.0 MVP` 描述。仓库存在 `v0.1.0` Tag，但没有对应的 GitHub Release；CloudBase 在线服务是否可用及其前后端部署方式需以实际服务配置为准。
+
+## 已知限制
+
+- 仅支持文本型 PDF，不支持扫描件 OCR。
+- AI 匹配分只用于辅助判断，不代表真实招聘结论。
+- Redis 已接入基础设施，但当前核心功能不依赖缓存命中。
+- CloudBase 在线预览版关闭 RAG；完整知识库能力仅在本地 Docker 版提供。
+- 当前没有完整 Agent 工作流，也没有工具调用、自动规划或循环决策能力。
+- 当前没有运营后台、异步任务队列和多模型路由。
+- 前端和后端的线上部署方式以实际 CloudBase 配置为准。

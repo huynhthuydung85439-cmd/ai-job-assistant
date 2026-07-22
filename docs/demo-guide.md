@@ -2,9 +2,25 @@
 
 ## 1. 演示目标
 
-建议用 6–10 分钟展示“注册登录 → 简历解析 → JD 匹配 → AI 对话 → RAG 知识库 → 历史记录”的完整闭环，重点说明 AI 能力、数据持久化和用户隔离。
+演示内容必须先区分运行版本：CloudBase 在线预览版展示“注册登录 → 简历解析 → JD 匹配
+→ 普通 AI 对话 → 历史记录”；本地 Docker 完整版还可以继续展示 RAG 知识库与来源引用。
+重点说明 AI 能力、数据持久化、用户隔离和已知限制。
 
-## 2. 演示前准备
+## 2. 运行版本边界
+
+### CloudBase 在线预览版
+
+支持注册与登录、文本型 PDF 简历解析、简历与 JD 匹配、普通 AI 对话、历史记录和 MySQL
+数据持久化。知识库 PDF 上传、Embedding 模型预热、Chroma 检索和 RAG 问答暂不开放。
+在线服务地址、前后端部署方式和当前可用状态需以实际 CloudBase 服务配置确认，文档不提供
+或猜测管理后台及未备案域名。
+
+### 本地 Docker 完整版
+
+支持在线预览版的全部功能，并提供 LangChain + Chroma RAG、本地 Embedding 模型、知识库
+上传、来源引用，以及 Chroma 和 Hugging Face 缓存持久化。
+
+## 3. 演示前准备
 
 - Docker Desktop 已启动，`docker compose version` 可正常执行。
 - 已将 `.env.example` 复制为 `.env`。
@@ -18,13 +34,13 @@
 MYSQL_DATABASE=<database-name>
 MYSQL_USER=<database-user>
 MYSQL_PASSWORD=<database-password>
-MYSQL_ROOT_PASSWORD=<database-root-password>
-JWT_SECRET_KEY=<long-random-jwt-signing-secret>
+MYSQL_ROOT_PASSWORD=<database-password>
+JWT_SECRET_KEY=<long-random-jwt-secret>
 DEEPSEEK_API_KEY=<your-deepseek-api-key>
-DEEPSEEK_MODEL=<deepseek-model-name>
+DEEPSEEK_MODEL=deepseek-chat
 ```
 
-## 3. 启动与检查
+## 4. 启动与检查
 
 构建并启动完整服务：
 
@@ -32,7 +48,8 @@ DEEPSEEK_MODEL=<deepseek-model-name>
 docker compose up -d --build
 ```
 
-首次启动或迁移版本变化后执行：
+API 容器启动时会自动等待数据库并执行 Alembic 迁移。只有自动迁移失败或需要单独排查时，
+才手动执行：
 
 ```bash
 docker compose run --rm api alembic upgrade head
@@ -50,11 +67,13 @@ docker compose ps
 - 健康检查：<http://localhost:8000/api/v1/health>
 - API 文档：<http://localhost:8000/docs>（非生产环境）
 
-## 4. 首次 RAG 预热
+## 5. 首次 RAG 预热（仅本地 Docker 完整版）
 
 Embedding 模型首次运行可能需要下载和加载。建议在正式演示前登录工作台，进入知识库页面完成一次预热，等待界面显示就绪后再上传资料。模型缓存保存在 Docker volume，后续容器重建通常无需重新下载。
 
-## 5. 推荐演示脚本
+CloudBase 在线预览版关闭 RAG，不执行预热、知识库上传或 RAG 问答。
+
+## 6. 推荐演示脚本
 
 ### 场景一：注册与登录（约 1 分钟）
 
@@ -86,7 +105,7 @@ Embedding 模型首次运行可能需要下载和加载。建议在正式演示�
 2. 提问：“根据后端开发岗位，帮我制定一周面试准备计划。”
 3. 展示回答，并说明登录用户的对话会写入历史记录。
 
-### 场景五：RAG 知识库（约 2 分钟）
+### 场景五：RAG 知识库（约 2 分钟，仅本地 Docker 完整版）
 
 1. 上传示例岗位说明或面试资料 PDF。
 2. 等待文档解析、切分和向量写入完成。
@@ -97,20 +116,20 @@ Embedding 模型首次运行可能需要下载和加载。建议在正式演示�
 
 ### 场景六：历史记录与持久化（约 1 分钟）
 
-1. 打开历史记录页，依次查看简历、分析、普通对话和 RAG 问答。
+1. 打开历史记录页，依次查看简历、分析和普通对话；本地 Docker 完整版还可查看 RAG 问答。
 2. 刷新页面或重启应用容器，再次查看记录。
 3. 说明 MySQL、Chroma、Redis 和模型缓存分别使用命名卷。
 
 讲解重点：容器生命周期与数据生命周期分离，重建 Web/API 容器不会清空业务数据。
 
-## 6. 用户隔离演示（可选）
+## 7. 用户隔离演示（可选）
 
 1. 使用账号 A 上传一份简历和知识资料。
 2. 退出后注册账号 B。
 3. 查看账号 B 的历史与知识库，确认无法看到账号 A 的数据。
-4. 如演示 API，可说明所有详情和删除操作也会校验资源所有权。
+4. 如演示 API，可说明所有现有资源查询均按当前用户隔离；分析详情和知识文档删除会校验资源所有权。简历、分析记录和聊天记录的删除能力暂未开放。
 
-## 7. 常见问题排查
+## 8. 常见问题排查
 
 ### Docker 无法连接
 
@@ -123,7 +142,7 @@ docker compose ps
 
 ### 数据表不存在
 
-执行迁移：
+先检查 API 容器启动日志中的数据库等待与迁移结果。只有自动迁移失败或需要独立排查时执行：
 
 ```bash
 docker compose run --rm api alembic upgrade head
@@ -145,7 +164,16 @@ docker compose logs --tail=100 api
 
 确认文件是文本型 PDF、大小不超过 10 MB。纯扫描图片 PDF 不属于 v0.1.0 的 OCR 支持范围。
 
-## 8. 演示结束
+## 9. 已知限制
+
+- 仅支持文本型 PDF，不支持扫描件 OCR。
+- AI 匹配分只用于辅助判断，不代表真实招聘结论。
+- Redis 已接入基础设施，但当前核心功能不依赖缓存命中。
+- CloudBase 在线预览版关闭 RAG。
+- 当前没有完整 Agent 工作流，也没有运营后台、异步任务队列和多模型路由。
+- 前端和后端的线上部署方式以实际 CloudBase 配置为准。
+
+## 10. 演示结束
 
 停止容器但保留数据卷：
 

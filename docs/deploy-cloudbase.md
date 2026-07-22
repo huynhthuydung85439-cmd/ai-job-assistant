@@ -5,6 +5,10 @@
 CloudBase 第一版用于求职展示预览。关系数据继续使用 CloudBase MySQL，注册登录、
 简历解析、JD 匹配、普通 AI 对话和历史记录保持可用。
 
+仓库只能确认根目录 `Dockerfile` 构建 FastAPI 后端，无法从代码确定 React 前端当前部署
+在哪个 CloudBase 服务。前端与后端的具体线上部署方式、域名绑定和服务状态，都需要根据
+实际 CloudBase 服务配置确认。
+
 云端预览版必须设置：
 
 ```dotenv
@@ -12,6 +16,20 @@ APP_ENV=production
 APP_DEBUG=false
 RAG_ENABLED=false
 ```
+
+实际部署还需要注入以下变量。示例只使用占位符，禁止把真实配置写入 GitHub：
+
+```dotenv
+DATABASE_URL=mysql+asyncmy://<database-user>:<url-encoded-password>@<internal-database-host>:3306/<database-name>?charset=utf8mb4
+JWT_SECRET_KEY=<long-random-jwt-secret>
+DEEPSEEK_API_KEY=<your-deepseek-api-key>
+DEEPSEEK_MODEL=deepseek-chat
+CORS_ORIGINS=https://<your-domain.example.com>
+```
+
+如果数据库密码包含 `@`、`:`、`/`、`#`、`%` 等保留字符，必须先进行 URL 编码，否则
+连接字符串可能被错误解析。真实数据库账号、密码、内网地址、API Key、JWT 密钥、访问
+凭证和未备案域名不得写入仓库、公开日志或截图。
 
 `RAG_ENABLED=false` 时，知识库上传、模型预热和 RAG 问答接口返回
 “云端预览版暂未开放知识库 RAG 功能”，应用不会加载 sentence-transformers、下载
@@ -22,6 +40,9 @@ Web API、数据库、认证、PDF 解析以及普通 DeepSeek 对话所需组�
 NVIDIA、sentence-transformers、Transformers、Chroma 或本地嵌入模型依赖。镜像构建时会
 自动执行 `scripts/check_cloud_runtime.py`，验证禁用态导入、健康路由、RAG 503 响应和禁用包
 缺失状态。
+
+根目录 `Dockerfile` 的启动命令会先执行 `python -m app.db.startup`，等待数据库、获取 MySQL
+迁移锁并执行 Alembic 升级，然后才启动 Uvicorn。手动迁移只用于自动迁移失败后的排查。
 
 ## 本地 Docker
 
@@ -41,6 +62,15 @@ JWT 密钥或 API Key 写入仓库。
 CloudBase 容器本地目录属于临时存储，不适合作为向量数据库的生产持久化层。后续将把
 Chroma 本地存储迁移到独立向量数据库服务，再为云端环境启用 `RAG_ENABLED=true` 和
 多实例扩缩容。
+
+## 在线预览与本地完整版
+
+CloudBase 在线预览版支持注册登录、文本型 PDF 简历解析、简历与 JD 匹配、普通 AI 对话、
+历史记录和 MySQL 持久化；不支持知识库 PDF 上传、Embedding 模型预热、Chroma 检索和
+RAG 问答。
+
+本地 Docker 完整版在上述能力之外，还支持 LangChain + Chroma RAG、本地 Embedding
+模型、知识库上传、来源引用，以及 Chroma 和 Hugging Face 缓存持久化。
 
 ## 健康检查
 

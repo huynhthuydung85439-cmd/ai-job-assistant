@@ -127,6 +127,10 @@ sequenceDiagram
 
 容器重建不会删除命名卷。`docker compose down --volumes` 会删除持久化数据，不应在需要保留演示数据时执行。
 
+API 容器启动命令会先运行 `python -m app.db.startup`。该模块等待数据库可连接，在 MySQL
+上获取迁移锁并执行 `alembic upgrade head`，成功后才启动 Uvicorn。手动迁移命令只用于
+自动迁移失败或需要独立排查的场景。
+
 ## 7. 安全边界
 
 - 密码经 bcrypt 哈希，不保存明文密码。
@@ -138,4 +142,12 @@ sequenceDiagram
 
 ## 8. v0.1.0 边界
 
-当前版本聚焦求职助手的完整演示闭环。Redis 已完成配置与容器接入，但暂未承担关键业务缓存；扫描版 PDF OCR、异步任务队列、多模型路由和运营后台不在 v0.1.0 范围内。
+当前版本聚焦求职助手的演示闭环。CloudBase 在线预览版关闭 RAG；本地 Docker 完整版才
+加载本地 Embedding 模型并使用 Chroma。Redis 已完成配置与容器接入，但暂未承担关键业务
+缓存。扫描版 PDF OCR、异步任务队列、多模型路由和运营后台不在 v0.1.0 范围内。
+
+当前 AI 能力由 LangChain Prompt、DeepSeek 调用、结构化解析与 RAG 组成，没有实现工具
+调用、自动规划、循环决策或 LangGraph Agent 工作流，因此不应描述为完整 AI Agent。
+
+所有现有资源查询均按当前用户隔离；分析详情和知识文档删除会校验资源所有权。简历、
+分析记录和聊天记录的删除接口暂未开放。
