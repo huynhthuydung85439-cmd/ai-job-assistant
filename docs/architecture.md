@@ -2,7 +2,7 @@
 
 ## 1. 架构目标
 
-v0.1.0 采用前后端分离和容器化部署，目标是将认证、AI 调用、关系数据、向量数据与 Web 入口分层，保证核心求职流程可演示、可测试、可持久化，并按用户隔离数据。
+v0.2.0 采用前后端分离和容器化部署，目标是将认证、AI 调用、关系数据、向量数据与 Web 入口分层，保证核心求职流程可演示、可测试、可持久化，并按用户隔离数据。
 
 ## 2. 系统上下文
 
@@ -22,9 +22,11 @@ flowchart LR
 - **LangChain / DeepSeek：** LangChain 统一模型调用，DeepSeek 完成求职对话和简历匹配分析。
 - **MySQL：** 保存用户、简历、匹配分析、对话历史和知识文档元数据。
 - **Chroma：** 持久化知识文档向量，并通过 `user_id` 元数据限定检索范围。
-- **Redis：** 已提供异步客户端和 Compose 服务，作为缓存基础设施；v0.1.0 核心业务不依赖 Redis 缓存命中。
+- **Redis：** 已提供异步客户端和 Compose 服务，作为缓存基础设施；v0.2.0 核心业务不依赖 Redis 缓存命中。
 
-## 3. 容器拓扑
+## 3. 部署拓扑
+
+### 3.1 本地 Docker Compose
 
 ```mermaid
 flowchart TB
@@ -39,6 +41,19 @@ flowchart TB
 ```
 
 Compose 内部服务通过 `backend` 网络按服务名互访。MySQL 仅绑定宿主机回环地址的 `3307` 端口；Web、API 和 Redis 的宿主机端口可通过环境变量配置。
+
+### 3.2 CloudBase 前后端分离部署
+
+仓库根目录的 `Dockerfile` 只构建 CloudBase 轻量后端镜像。该镜像运行 FastAPI API，启动
+时执行数据库迁移，并通过 `/api/v1/health` 提供健康检查；`frontend/` 不会进入该镜像。
+
+React/Vite 前端在 `frontend/` 中通过 `npm ci` 和 `npm run build` 独立构建，产物位于
+`frontend/dist/`，应由独立静态托管或前端服务发布。前端通过部署时配置的 API 基础地址
+访问 CloudBase 后端；当前代码支持 `VITE_API_BASE_URL`，具体地址、域名和托管平台需在
+实际部署平台配置。因此 CloudBase 后端与前端静态站点是两项独立部署。
+
+`.dockerignore` 对 `frontend/node_modules/` 和 `frontend/dist/` 的排除属于发布边界设计，
+避免本地依赖和前端产物进入后端构建上下文，并非遗漏前端构建步骤。
 
 ## 4. 核心数据流
 
@@ -140,14 +155,17 @@ API 容器启动命令会先运行 `python -m app.db.startup`。该模块等待�
 - Nginx 只代理 `/api/`，生产环境由部署层配置 HTTPS 和密钥管理。
 - `.env`、本地数据目录、模型缓存和构建产物均由 `.gitignore` 排除。
 
-## 8. v0.1.0 边界
+## 8. v0.2.0 边界
 
 当前版本聚焦求职助手的演示闭环。CloudBase 在线预览版关闭 RAG；本地 Docker 完整版才
 加载本地 Embedding 模型并使用 Chroma。Redis 已完成配置与容器接入，但暂未承担关键业务
-缓存。扫描版 PDF OCR、异步任务队列、多模型路由和运营后台不在 v0.1.0 范围内。
+缓存。扫描版 PDF OCR、异步任务队列、多模型路由和运营后台不在 v0.2.0 范围内。
 
 当前 AI 能力由 LangChain Prompt、DeepSeek 调用、结构化解析与 RAG 组成，没有实现工具
 调用、自动规划、循环决策或 LangGraph Agent 工作流，因此不应描述为完整 AI Agent。
 
 所有现有资源查询均按当前用户隔离；分析详情和知识文档删除会校验资源所有权。简历、
 分析记录和聊天记录的删除接口暂未开放。
+
+v0.2.0 发布范围包括 FastAPI 后端源码、React/Vite 前端源码、CloudBase 轻量后端部署配置
+和前端独立构建配置；前端构建产物不属于 CloudBase 后端镜像内容。

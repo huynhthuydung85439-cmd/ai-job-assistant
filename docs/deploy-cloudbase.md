@@ -5,9 +5,37 @@
 CloudBase 第一版用于求职展示预览。关系数据继续使用 CloudBase MySQL，注册登录、
 简历解析、JD 匹配、普通 AI 对话和历史记录保持可用。
 
-仓库只能确认根目录 `Dockerfile` 构建 FastAPI 后端，无法从代码确定 React 前端当前部署
-在哪个 CloudBase 服务。前端与后端的具体线上部署方式、域名绑定和服务状态，都需要根据
-实际 CloudBase 服务配置确认。
+仓库根目录的 `Dockerfile` 是 CloudBase 轻量后端镜像，仅运行 FastAPI API、数据库迁移和
+健康检查，不构建或包含 `frontend/`。CloudBase 后端与前端静态站点是两项独立部署；前端
+使用的具体托管产品、域名和平台配置需在实际部署平台确认。
+
+### 前端独立构建
+
+前端通过以下流程单独构建：
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+构建产物为 `frontend/dist/`，应由独立静态托管或前端服务发布，不复制进 CloudBase 后端
+镜像。前端通过部署时配置的 API 基础地址访问后端；当前代码支持 `VITE_API_BASE_URL`，
+实际值需在前端部署平台配置。
+
+`.dockerignore` 排除 `frontend/node_modules/` 和 `frontend/dist/` 是有意设计，用于保持
+后端镜像构建上下文轻量，不是遗漏前端构建产物。
+
+### v0.2.0 发布范围
+
+v0.2.0 发布范围包括：
+
+- FastAPI 后端源码；
+- React/Vite 前端源码；
+- CloudBase 后端部署配置；
+- 前端独立构建配置。
+
+该范围不要求 `frontend/dist/` 进入 CloudBase 后端镜像。
 
 云端预览版必须设置：
 

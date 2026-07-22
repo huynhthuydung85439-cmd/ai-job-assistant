@@ -162,7 +162,7 @@ docker compose logs --tail=100 api
 
 ### PDF 无法解析
 
-确认文件是文本型 PDF、大小不超过 10 MB。纯扫描图片 PDF 不属于 v0.1.0 的 OCR 支持范围。
+确认文件是文本型 PDF、大小不超过 10 MB。纯扫描图片 PDF 不属于 v0.2.0 的 OCR 支持范围。
 
 ## 9. 已知限制
 

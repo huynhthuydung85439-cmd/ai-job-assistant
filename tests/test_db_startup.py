@@ -35,16 +35,16 @@ def test_describe_database_error_classifies_common_failures(error, expected):
 
 def test_describe_database_error_does_not_expose_exception_details():
     sensitive_url = (
-        "mysql+asyncmy://<USERNAME>:<PASSWORD>@172.17.0.15:3306/"
-        "ai-job-assistant-d5ehi66ba6134c4?charset=utf8mb4"
+        "mysql+asyncmy://test_user:test_password@db.internal.example:3306/"
+        "test_database?charset=utf8mb4"
     )
 
     description = startup._describe_database_error(RuntimeError(sensitive_url))
 
     assert description == "RuntimeError: connection attempt failed"
     assert sensitive_url not in description
-    assert "<USERNAME>" not in description
-    assert "<PASSWORD>" not in description
+    assert "test_user" not in description
+    assert "test_password" not in description
 
 
 class _FailingConnectionContext:
@@ -83,11 +83,11 @@ async def _no_sleep(_seconds: float) -> None:
 def test_run_alembic_upgrade_reports_sanitized_process_failure(monkeypatch, capsys):
     database_url = URL.create(
         "mysql+asyncmy",
-        username="sensitive-user",
-        password="sensitive-password!",
-        host="db.example",
+        username="test_user",
+        password="test_password",
+        host="db.internal.example",
         port=3306,
-        database="example",
+        database="test_database",
     )
     rendered_url = database_url.render_as_string(hide_password=False)
     result = startup.subprocess.CompletedProcess(
@@ -95,8 +95,8 @@ def test_run_alembic_upgrade_reports_sanitized_process_failure(monkeypatch, caps
         returncode=1,
         stdout=f"database_url={rendered_url}",
         stderr=(
-            "OperationalError: Access denied for user 'sensitive-user'; "
-            "password=sensitive-password!"
+            "OperationalError: Access denied for user 'test_user'; "
+            "password=test_password"
         ),
     )
     monkeypatch.setattr(startup.subprocess, "run", lambda *args, **kwargs: result)
@@ -114,8 +114,8 @@ def test_run_alembic_upgrade_reports_sanitized_process_failure(monkeypatch, caps
     assert "Alembic stderr (sanitized)" in output
     assert "database_url=<redacted>" in output
     assert rendered_url not in output
-    assert "sensitive-user" not in output
-    assert "sensitive-password" not in output
+    assert "test_user" not in output
+    assert "test_password" not in output
 
 
 def test_run_alembic_upgrade_reports_process_start_failure(monkeypatch, capsys):

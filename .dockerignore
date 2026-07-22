@@ -1,16 +1,56 @@
+# Git and environment
 .git
 .gitignore
 .env
 .env.*
 !.env.example
-.venv
-venv
-__pycache__
+
+# Python virtual environments and caches
+.venv/
+.venv*/
+venv/
+env/
+**pycache**/
 *.py[cod]
-.pytest_cache
-.ruff_cache
-.idea
-.vscode
-tests
-data
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Local runtime data
+data/
+uploads/
+resumes/
+resume_uploads/
+tmp_uploads/
+temp_uploads/
+tmp/
+temp/
+
+# Databases and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# Local artifacts
+output/
+*.zip
+*.tar
+*.tar.gz
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Development-only files
+tests/
 README.md

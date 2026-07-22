@@ -4,7 +4,7 @@
 
 | 项目状态 | 结果 |
 | --- | --- |
-| 当前版本 | **v0.1.0 MVP**（仓库存在同名 Tag，未创建 GitHub Release） |
+| 当前版本 | **v0.2.0 MVP**（仓库现有 `v0.1.0` Tag，尚未创建 `v0.2.0` Tag 或 GitHub Release） |
 | 自动化测试 | 覆盖认证、简历解析、JD 匹配、AI 对话、RAG、历史记录、数据库启动和迁移；最新结果以 `pytest` 或 CI 为准 |
 | 部署形态 | 本地 Docker 完整版 + CloudBase 在线预览配置（线上状态需以实际 CloudBase 服务配置确认） |
 
@@ -59,8 +59,26 @@ flowchart LR
 | Chroma 检索、RAG 问答和来源引用 | 暂不支持 | 支持 |
 
 CloudBase 在线预览版设置 `RAG_ENABLED=false`；本地 Docker Compose 默认设置
-`RAG_ENABLED=true`，并持久化 Chroma 数据与 Hugging Face 模型缓存。前端和后端的
-实际线上部署方式需根据 CloudBase 服务配置确认，不能仅由仓库代码推断。
+`RAG_ENABLED=true`，并持久化 Chroma 数据与 Hugging Face 模型缓存。
+
+### CloudBase 前后端分离发布
+
+仓库根目录的 `Dockerfile` 是 CloudBase 轻量后端镜像，只运行 FastAPI API、数据库自动
+迁移和健康检查，不构建或复制 `frontend/`。前端需要独立构建：
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+构建产物位于 `frontend/dist/`，应通过独立静态托管或前端服务发布；具体托管产品、域名和
+平台配置需在实际部署平台确认。前端通过配置的 API 基础地址（当前代码支持
+`VITE_API_BASE_URL`）访问 CloudBase 后端，因此后端容器与前端静态站点是两项独立部署。
+`.dockerignore` 排除 `frontend/node_modules/` 和 `frontend/dist/` 是有意设计，不是构建遗漏。
+
+v0.2.0 发布范围包括 FastAPI 后端源码、React/Vite 前端源码、CloudBase 后端部署配置和
+前端独立构建配置，但不要求前端构建产物进入 CloudBase 后端镜像。
 
 ## 功能说明
 
@@ -248,7 +266,7 @@ cd frontend && npm run build
 
 ## 版本说明
 
-当前代码以 `v0.1.0 MVP` 描述。仓库存在 `v0.1.0` Tag，但没有对应的 GitHub Release；CloudBase 在线服务是否可用及其前后端部署方式需以实际服务配置为准。
+当前代码以 `v0.2.0 MVP` 描述。仓库存在 `v0.1.0` Tag，但没有对应的 GitHub Release；CloudBase 在线服务是否可用及其前后端部署方式需以实际服务配置为准。
 
 ## 已知限制
 
